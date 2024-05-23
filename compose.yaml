@@ -1,0 +1,37 @@
+version: '1.0.1'
+name: myapi
+
+services:
+  api:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: fastapicontainer
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres_db
+    networks:
+      - my-api-net
+
+  postgres_db:
+    image: postgres:latest
+    restart: always
+    container_name: PostgresCont
+    environment:
+      POSTGRES_USER: wajidminhas
+      POSTGRES_PASSWORD: my_password
+      POSTGRES_DB: tododatabase
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_db:/var/lib/postgresql/data
+    networks:
+      - my-api-net
+
+volumes:
+  postgres_db:
+    driver: local
+
+networks:
+  my-api-net:
