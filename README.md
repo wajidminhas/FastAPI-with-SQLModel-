@@ -1,7 +1,7 @@
 
 
 
-# MyAPI
+# TODO API
 
 This project is a simple API built with FastAPI and PostgreSQL using Docker. The API allows for basic CRUD operations on a to-do list.
 
