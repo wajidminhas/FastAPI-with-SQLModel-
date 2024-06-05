@@ -1,23 +1,22 @@
 version: '1.0.1'
-name: myapi
+name: todo
 
 services:
   api:
     build:
       context: ./
       dockerfile: Dockerfile
-    container_name: fastapicontainer
     ports:
       - "8000:8000"
     depends_on:
-      - postgres_db
-    networks:
-      - my-api-net
+      - postgres_todo_db
+    volumes:
+      - ./todo:/code
 
-  postgres_db:
+  postgres_todo_db:
     image: postgres:latest
     restart: always
-    container_name: PostgresCont
+    container_name: TodoContainer
     environment:
       POSTGRES_USER: wajidminhas
       POSTGRES_PASSWORD: my_password
@@ -25,13 +24,13 @@ services:
     ports:
       - "5433:5432"
     volumes:
-      - postgres_db:/var/lib/postgresql/data
-    networks:
-      - my-api-net
+      - postgres_todo_db:/var/lib/postgresql/data
+    
 
 volumes:
-  postgres_db:
+  postgres_todo_db:
     driver: local
 
 networks:
-  my-api-net:
+  default:
+    driver: bridge

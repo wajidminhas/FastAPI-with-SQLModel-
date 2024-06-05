@@ -1,28 +1,16 @@
 
 
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import SQLModel, Field, Session, create_engine, select
-from typing import Optional, Annotated
-from todo import settings
+from typing import Annotated
 from contextlib import asynccontextmanager
+from todo.auth import authenticate_user, get_user_from_db
+from todo.model import Todo
+from todo.db import create_db_table, get_session
+from todo.router import user
 
 
-class Todo(SQLModel, table=True):
-    __tablename__ = "todos"
-    id: Optional[int] = Field(default=None, primary_key=True)
-    title: str = Field(index=True)
-
-conn_str = str(settings.DATABASE_URL_P).replace(
-    "postgresql", "postgresql+psycopg"
-)
-engine = create_engine(conn_str,  pool_recycle=300)
-
-def create_db_table()->None:
-    SQLModel.metadata.create_all(engine)
-
-def get_session():
-    with Session(engine) as session:
-        yield session
 
 @asynccontextmanager
 async def lifespan(app:FastAPI):
@@ -33,18 +21,25 @@ async def lifespan(app:FastAPI):
 
         
 
-app:FastAPI = FastAPI(lifespan=lifespan, 
+app:FastAPI = FastAPI(
+                    lifespan=lifespan, 
                       title="Todo App",
-                        servers=[
-                            {
-                                "url" : "http://127.0.0.1:8000",
-                                "Description" : "development server"
-                            }
-                        ])
+                        )
+app.include_router(router= user.user_router)
 
 @app.get("/")
 async def get_root():
     return {"Message": "Hello developers"}
+
+@app.post("/token")
+async def login(form_data:Annotated[OAuth2PasswordRequestForm, Depends()],
+                    session:Annotated[Session, Depends(get_session)]):
+    user = authenticate_user(name=form_data.username, password=form_data.password, email=None, session=session)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid username or password")
+    return user
+
+    
 
     # POST REQUEST CREATED 
 @app.post("/todos",response_model=Todo) 

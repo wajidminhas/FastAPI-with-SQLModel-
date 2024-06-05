@@ -9,6 +9,8 @@ try:
 except FileNotFoundError:
     config = Config()
 
-DATABASE_URL_P= config("DATABASE_URL_P", cast=Secret)
+DATABASE_URL_POSTGRES= config("DATABASE_URL_POSTGRES", cast=Secret)
 
-# TEST_DATABASE_URL = config("TEST_DATABASE_URL", cast=Secret)
+TODO_DATABASE_URL = config("TODO_DATABASE_URL", cast=Secret)
+
+TEST_DATABASE_URL = config("TEST_DATABASE_URL", cast=Secret)
