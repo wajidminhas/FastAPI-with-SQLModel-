@@ -10,6 +10,7 @@ from typing import Optional
 
 
 class User(SQLModel, table=True):
+    __tablename__ = "user"
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
     email: str
@@ -18,6 +19,7 @@ class User(SQLModel, table=True):
     # todos: List["Todo"] = Relationship(back_populates="user")
 
 class Todo(SQLModel, table=True):
+    __tablename__ = "todo"
     id: int = Field(default=None, primary_key=True)
     title: str = Field(index=True)
     is_completed: bool = Field(default=False)
@@ -42,3 +44,10 @@ class Register_User(BaseModel):
                 str,
                 Form()
             ]
+
+class Token(BaseModel):
+       access_token : str
+       toke_type : str
+
+class TokenData(BaseModel):
+       username : str

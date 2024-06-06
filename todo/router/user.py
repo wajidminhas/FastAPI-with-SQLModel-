@@ -3,7 +3,7 @@
 from sqlmodel import Session
 from typing_extensions import Annotated
 from fastapi import APIRouter, Depends, HTTPException
-from todo.auth import get_user_from_db, hash_password, oauth_scheme
+from todo.auth import current_user, get_user_from_db, hash_password, oauth_scheme
 from todo.db import get_session
 from todo.model import Register_User, User
 
@@ -37,6 +37,6 @@ async def register_user(new_user: Annotated[Register_User, Depends()],
 
 
 @user_router.get("/profile")
-async def user_profile(current_user:Annotated[User, Depends(oauth_scheme)]):
-    return {"user": "Hello user"}
+async def user_profile(current_user : Annotated[User, Depends(current_user)]):
+    return current_user
 

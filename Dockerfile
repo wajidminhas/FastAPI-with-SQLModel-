@@ -1,7 +1,7 @@
 # Use an official Python runtime as a parent image
 FROM python:3.12
 
-LABEL maintainer="shanitent667@gmaol.com"
+LABEL maintainer="wajid minhas"
 # Set the working directory in the container
 WORKDIR /code
 # Install system dependencies required for potential Python packages

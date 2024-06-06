@@ -1,4 +1,4 @@
-version: '1.0.1'
+version: '3.8'
 name: todo
 
 services:
@@ -6,10 +6,13 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile
+    container_name: fastapicontainer
     ports:
       - "8000:8000"
     depends_on:
       - postgres_todo_db
+    environment:
+      DATABASE_URL: postgres://wajidminhas:my_password@TodoContainer:5432/tododatabase
     volumes:
       - ./todo:/code
 
@@ -22,10 +25,9 @@ services:
       POSTGRES_PASSWORD: my_password
       POSTGRES_DB: tododatabase
     ports:
-      - "5433:5432"
+      - "5434:5432"
     volumes:
       - postgres_todo_db:/var/lib/postgresql/data
-    
 
 volumes:
   postgres_todo_db:
