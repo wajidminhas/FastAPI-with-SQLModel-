@@ -76,13 +76,13 @@ async def get_all_tasks(session: Annotated[Session, Depends(get_session)]):
 
 @app.post("/create_order")
 async def create_order(order: Order):
-    producer = AIOKafkaProducer(bootstrap_servers='broker:19092')
+    producer = AIOKafkaProducer(bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVER)
     await producer.start()
     orderJSON = json.dumps(order.__dict__).encode("utf-8")
     print("Order Json")
     print(orderJSON)
     try:
-        await producer.send_and_wait("order", orderJSON)
+        await producer.send_and_wait(settings.KAFKA_ORDER_TOPIC, orderJSON)
     finally:
         await producer.stop()
 
