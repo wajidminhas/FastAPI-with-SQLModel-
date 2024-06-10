@@ -6,7 +6,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import SQLModel, Field, Session, create_engine, select
 from typing import Annotated
 from contextlib import asynccontextmanager
-from todo.auth import EXPIRY_TIME, authenticate_user, create_access_token, get_user_from_db, current_user
+from todo.auth import authenticate_user
 from todo.model import Todo, Token, User
 from todo.db import create_db_table, get_session
 from todo.router import user
@@ -32,30 +32,27 @@ app.include_router(router= user.user_router)
 async def get_root():
     return {"Message": "Hello developers"}
 
-            # *********************************************************** 
 
-@app.post("/token", response_model=Token)
-async def login(form_data:Annotated[OAuth2PasswordRequestForm, Depends()],
-                    session:Annotated[Session, Depends(get_session)]):
-    user = authenticate_user(name=form_data.username, password=form_data.password, email=None, session=session)
+# ********************   # USER AUTHENTICATION    **************************** 
+@app.post("/token")
+async def user_profile_authenticate(form_data:Annotated[OAuth2PasswordRequestForm, Depends()],
+                                    session:Annotated[Session, Depends(get_session)]):
+    user = authenticate_user(username=form_data.username, password=form_data.password,
+                             email=None, session=session )
     if not user:
-        raise HTTPException(status_code=401, detail="Invalid username or password")
-    
-    expire_time = timedelta(minutes= EXPIRY_TIME)
-    access_token = create_access_token({"sub" :form_data.username}, expire_time)
-    return Token(access_token=access_token, toke_type="bearer")
-
+        raise HTTPException(status_code=401, detail="incorrect username or email")
+    return user
     
 
     # POST REQUEST CREATED 
-@app.post("/todos",response_model=Todo) 
-async def create_todo(
-                      todo: Todo, session : Annotated[Session, Depends( get_session)]):
-    session.add(todo)
-    session.commit()
-    session.refresh(todo)
+# @app.post("/todos",response_model=Todo) 
+# async def create_todo(current_user:Annotated[User, Depends(current_user)],
+#                       todo: Todo, session : Annotated[Session, Depends( get_session)]):
+#     session.add(todo)
+#     session.commit()
+#     session.refresh(todo)
 
-    return todo
+#     return todo
 
 @app.get("/todos/{id}", response_model=Todo)
 async def get_single_task(id: int, session: Annotated[Session, Depends(get_session)]):

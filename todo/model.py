@@ -9,14 +9,10 @@ from typing import Optional
 
 
 
-class User(SQLModel, table=True):
-    __tablename__ = "user"
-    id: Optional[int] = Field(default=None, primary_key=True)
-    name: str
-    email: str
-    password: str
 
-    # todos: List["Todo"] = Relationship(back_populates="user")
+
+
+  
 
 class Todo(SQLModel, table=True):
     __tablename__ = "todo"
@@ -24,12 +20,24 @@ class Todo(SQLModel, table=True):
     title: str = Field(index=True)
     is_completed: bool = Field(default=False)
     user_id: int = Field(default=None, foreign_key="user.id")
-  
 
-    # user: Optional[User] = Relationship(back_populates="todos")
+ # ***********     ***********     ***********     ***********     ***********     ********** 
+
+    
+class User(SQLModel, table=True):
+    __tablename__ = "user"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    username: str
+    email: str
+    password: str
+        
+
+ # ***********     ***********     ***********     ***********     ***********     ********** 
 
 
-# for user credential 
+        
+        # for user credential 
+        # add dependency    poetry add python-multipart
 
 class Register_User(BaseModel):
             name : Annotated[
@@ -45,9 +53,12 @@ class Register_User(BaseModel):
                 Form()
             ]
 
+ # ***********     ***********     ***********     ***********     ***********     ********** 
+
 class Token(BaseModel):
        access_token : str
        toke_type : str
 
 class TokenData(BaseModel):
-       username : str
+       name : str
+
