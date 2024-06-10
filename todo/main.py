@@ -10,8 +10,17 @@ from todo.auth import authenticate_user
 from todo.model import Todo, Token, User
 from todo.db import create_db_table, get_session
 from todo.router import user
+from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
+import json
+from todo import settings
 
 
+
+class Order(SQLModel):
+    id: int = Field(default=None)
+    itemname:str
+    itemdescription: str
+    itemprice : int
 
 @asynccontextmanager
 async def lifespan(app:FastAPI):
@@ -36,7 +45,7 @@ async def get_root():
 # ********************   # USER AUTHENTICATION    **************************** 
 @app.post("/token")
 async def user_profile_authenticate(form_data:Annotated[OAuth2PasswordRequestForm, Depends()],
-                                    session:Annotated[Session, Depends(get_session)]):
+                                    session:Annotated[Session, Depends(get_session)], ):
     user = authenticate_user(username=form_data.username, password=form_data.password,
                              email=None, session=session )
     if not user:
@@ -63,3 +72,19 @@ async def get_single_task(id: int, session: Annotated[Session, Depends(get_sessi
 async def get_all_tasks(session: Annotated[Session, Depends(get_session)]):
     todos = session.exec(select(Todo)).all()
     return todos
+
+
+@app.post("/create_order")
+async def create_order(order: Order):
+    producer = AIOKafkaProducer(bootstrap_servers='broker:19092')
+    await producer.start()
+    orderJSON = json.dumps(order.__dict__).encode("utf-8")
+    print("Order Json")
+    print(orderJSON)
+    try:
+        await producer.send_and_wait("order", orderJSON)
+    finally:
+        await producer.stop()
+
+    return orderJSON
+    
