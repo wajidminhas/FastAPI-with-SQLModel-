@@ -8,7 +8,7 @@ services:
       dockerfile: Dockerfile
     container_name: fastapicontainer
     ports:
-      - "8001:8000"
+      - "8015:8015"
     depends_on:
       - postgres_todo_db
     
@@ -24,7 +24,7 @@ services:
       POSTGRES_PASSWORD: my_password
       POSTGRES_DB: tododatabase
     ports:
-      - "5434:5432"
+      - "5415:5432"
     volumes:
       - postgres_todo_db:/var/lib/postgresql/data
   broker:

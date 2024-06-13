@@ -7,6 +7,7 @@ WORKDIR /code
 # Install system dependencies required for potential Python packages
 RUN apt-get update && apt-get install -y \
     build-essential \
+    protobuf-compiler\
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
@@ -27,7 +28,7 @@ RUN poetry config virtualenvs.create false
 RUN poetry install
 
 # Make port 8000 available to the world outside this container
-EXPOSE 8000
+EXPOSE 8015
 
 # Run the app. CMD can be overridden when starting the container
 CMD ["poetry", "run", "uvicorn", "todo.main:app", "--host", "0.0.0.0", "--reload"]
