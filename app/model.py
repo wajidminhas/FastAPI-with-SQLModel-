@@ -41,7 +41,7 @@ class User(SQLModel, table=True):
         # add dependency    poetry add python-multipart
 
 class Register_User(BaseModel):
-            name : Annotated[
+            username : Annotated[
                 str,
                 Form()
             ]

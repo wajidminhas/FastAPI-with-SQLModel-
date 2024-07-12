@@ -1,5 +1,5 @@
 version: '3.8'
-name: todo
+name: balaaj-todo 
 
 services:
   api:
@@ -8,9 +8,13 @@ services:
       dockerfile: Dockerfile
     container_name: fastapicontainer
     ports:
-      - "8015:8015"
+      - "8085:8085"
     depends_on:
       - postgres_todo_db
+      - broker
+    networks:
+      - kong-net
+      
     
     volumes:
       - ./:/code
@@ -25,12 +29,17 @@ services:
       POSTGRES_DB: tododatabase
     ports:
       - "5415:5432"
+    networks:
+      - kong-net
+      
     volumes:
       - postgres_todo_db:/var/lib/postgresql/data
   broker:
     image: apache/kafka:3.7.0
     hostname: broker
     container_name: broker
+    networks:
+      - kong-net
     ports:
       - '9092:9092'
     environment:
@@ -60,6 +69,8 @@ services:
       DYNAMIC_CONFIG_ENABLED: "true"
     depends_on:
       - broker
+    networks:
+      - kong-net
 
 volumes:
   postgres_todo_db:
@@ -68,3 +79,5 @@ volumes:
 networks:
   default:
     driver: bridge
+  kong-net:
+    driver : bridge

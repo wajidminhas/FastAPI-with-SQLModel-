@@ -1,7 +1,7 @@
-from todo import settings
+from app import settings
 from sqlmodel import create_engine, SQLModel, Session
 
-conn_str = str(settings.DATABASE_URL_POSTGRES).replace(
+conn_str = str(settings.TODO_DATABASE_URL).replace(
     "postgresql", "postgresql+psycopg"
 )
 engine = create_engine(conn_str,  pool_recycle=300)
