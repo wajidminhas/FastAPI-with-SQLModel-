@@ -34,6 +34,28 @@ async def register_user(new_user : Annotated[Register_User, Depends()],
     session.commit()
     session.refresh(user)
     return {"Message" : f"user {user.username} has successfully created"}
+
+    # ****** ********* GET USER FROM DATABASE     ***** **********
+
+@user_router.get("/get_user/{id}")
+async def get_user(id : int, session : Annotated[Session, Depends(get_session)]):
+    user = session.get(User, id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+
+
+# delete user from db
+
+@user_router.delete("/delete_user")
+async def delete_user(id : int, session : Annotated[Session, Depends(get_session)]):
+    user = session.get(User, id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    session.delete(user)
+    session.commit()
+    return {"Message" : f"user {user.username} has successfully deleted"}
     
 
 # @user_router.get("/profile")

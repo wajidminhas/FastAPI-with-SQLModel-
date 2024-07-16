@@ -3,11 +3,13 @@
 from datetime import timedelta, datetime, timezone
 from fastapi import FastAPI, Depends, HTTPException, logger
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel
 from sqlmodel import SQLModel, Field, Session, create_engine, select
 from typing import Annotated
 from contextlib import asynccontextmanager
 from .auth import EXPIRY_TIME, authenticate_user, create_access_token
-from .model import  Todo, Token, User
+from app.model import  Todo , User
+from .model import Token
 from .db import create_db_table, get_session
 from .router import user
 from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
@@ -74,14 +76,24 @@ async def get_root():
 
 
 # ********************   # USER AUTHENTICATION    **************************** 
-# @app.post("/token")
-# async def user_profile_authenticate(form_data:Annotated[OAuth2PasswordRequestForm, Depends()],
-#                                     session:Annotated[Session, Depends(get_session)], ):
-#     user = authenticate_user(username=form_data.username, password=form_data.password,
-#                              email=None, session=session )
-#     if not user:
-#         raise HTTPException(status_code=401, detail="incorrect username or email")
-#     return user
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+@app.post("/token", response_model=Token)
+async def user_profile_authenticate(form_data:Annotated[OAuth2PasswordRequestForm, Depends()],
+                                    session:Annotated[Session, Depends(get_session)], ):
+    user = authenticate_user(username=form_data.username, password=form_data.password,
+                              session=session )
+    if not user:
+        raise HTTPException(status_code=401, detail="incorrect username or email")
+
+    access_token_expires = timedelta(minutes=EXPIRY_TIME)
+    access_token = create_access_token(
+        data={"sub": user.username}, expiry_time=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
     
 
     # POST REQUEST CREATED 
@@ -172,15 +184,13 @@ async def create_todo(todo: Todo, session: Annotated[Session, Depends(get_sessio
 
     return todo
 
-@app.post('/token')
-async def login(form_data:Annotated[OAuth2PasswordRequestForm, Depends()],
-                session:Annotated[Session, Depends(get_session)]):
-    user = authenticate_user (form_data.username, form_data.username, form_data.password, session)
-    # return user
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid username or password")
-    
-    expire_time = timedelta(minutes=EXPIRY_TIME)
-    access_token = create_access_token({"sub":form_data.username}, expire_time)
 
-    return Token(access_token=access_token, token_type="bearer")
+@app.post("/token", response_model=Token)
+async def login_user(form_data:Annotated[OAuth2PasswordRequestForm, Depends()],
+                session:Session= Depends(get_session)):
+    user = authenticate_user(session=session, username=form_data.username, password=form_data.password)
+    access_token_expires = timedelta(minutes=30)
+    access_token = create_access_token(
+        data={"sub": user.username}, expiry_time=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
