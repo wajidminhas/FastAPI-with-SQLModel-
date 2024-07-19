@@ -11,7 +11,7 @@ except FileNotFoundError:
 
 # DATABASE_URL_POSTGRES= config("DATABASE_URL_POSTGRES", cast=Secret)
 
-TODO_DATABASE_URL = config("TODO_DATABASE_URL", cast=Secret)
+NEON_DATABASE_URL = config("NEON_DATABASE_URL", cast=Secret)
 
 TEST_DATABASE_URL = config("TEST_DATABASE_URL", cast=Secret)
 

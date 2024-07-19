@@ -3,7 +3,7 @@
 from sqlmodel import Session
 from typing_extensions import Annotated
 from fastapi import APIRouter, Depends, HTTPException
-from app.auth import get_user_from_db, hash_password
+from app.auth import current_user, get_user_from_db, hash_password
 from app.db import get_session
 from app.model import Register_User, User
 
@@ -58,7 +58,7 @@ async def delete_user(id : int, session : Annotated[Session, Depends(get_session
     return {"Message" : f"user {user.username} has successfully deleted"}
     
 
-# @user_router.get("/profile")
-# async def user_profile():
-#     return current_user
+@user_router.get("/profile")
+async def user_profile(current_user : Annotated[User, Depends(current_user)]):
+    return current_user
 

@@ -1,9 +1,10 @@
 from passlib.context import CryptContext
+from pydantic import BaseModel
 from sqlmodel import Session, select
 from typing import Annotated
 from .db import get_session
 from fastapi import Depends, HTTPException, status
-from .model import  TokenData, User, Todo
+from .model import  User, Todo
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import jwt, JWTError
 from datetime import datetime, timezone, timedelta
@@ -64,7 +65,8 @@ def create_access_token(data: dict, expiry_time: timedelta | None):
         data_to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-
+class TokenData(BaseModel):
+       username : str
 def current_user(token: Annotated[str, Depends(oauth_scheme)],
                  session: Annotated[Session, Depends(get_session)]):
     credential_exception = HTTPException(

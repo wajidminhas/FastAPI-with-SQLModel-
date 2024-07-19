@@ -22,7 +22,7 @@ from typing import Optional
     
 class User(SQLModel, table=True):
     __tablename__ = "user"
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     username: str
     email: str
     password: str
@@ -69,3 +69,14 @@ class Token(BaseModel):
 class TokenData(BaseModel):
        name : str
 
+    # create model for todo creation 
+
+class TodoCreate(BaseModel):
+    title: str = Field(index=True, min_length=5, max_length=100)
+
+
+    # create model for update todos
+
+class TodoUpdate(BaseModel):
+    title: str = Field(index=True, min_length=5, max_length=100)
+    is_completed: bool

@@ -1,7 +1,7 @@
 from app import settings
 from sqlmodel import create_engine, SQLModel, Session
 
-conn_str = str(settings.TODO_DATABASE_URL).replace(
+conn_str = str(settings.NEON_DATABASE_URL).replace(
     "postgresql", "postgresql+psycopg"
 )
 engine = create_engine(conn_str,  pool_recycle=300)

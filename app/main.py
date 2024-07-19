@@ -7,9 +7,9 @@ from pydantic import BaseModel
 from sqlmodel import SQLModel, Field, Session, create_engine, select
 from typing import Annotated
 from contextlib import asynccontextmanager
-from .auth import EXPIRY_TIME, authenticate_user, create_access_token
-from app.model import  Todo , User
-from .model import Token
+from .auth import EXPIRY_TIME, authenticate_user, create_access_token, current_user
+from app.model import  Todo , User, Token
+from .model import   TodoUpdate, Token
 from .db import create_db_table, get_session
 from .router import user
 from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
@@ -73,12 +73,10 @@ app.include_router(router= user.user_router)
 @app.get("/")
 async def get_root():
     return {"Message": "Hello developers"}
-
-
-# ********************   # USER AUTHENTICATION    **************************** 
 class Token(BaseModel):
     access_token: str
     token_type: str
+# ********************   # USER AUTHENTICATION    **************************** 
 @app.post("/token", response_model=Token)
 async def user_profile_authenticate(form_data:Annotated[OAuth2PasswordRequestForm, Depends()],
                                     session:Annotated[Session, Depends(get_session)], ):
@@ -106,10 +104,7 @@ async def user_profile_authenticate(form_data:Annotated[OAuth2PasswordRequestFor
 
 #     return todo
 
-@app.get("/todos/{id}", response_model=Todo)
-async def get_single_task(id: int, session: Annotated[Session, Depends(get_session)]):
-    todos = session.exec(select(Todo).where(Todo.id == id)).first()
-    return todos
+
 
 @app.get("/todos", response_model=list[Todo])
 async def get_all_tasks(session: Annotated[Session, Depends(get_session)]):
@@ -170,20 +165,32 @@ async def get_all_tasks(session: Annotated[Session, Depends(get_session)]):
 #     return new_todo
 
     # to create to do
-@app.post("/create_todo")
-async def create_todo(todo: Todo, session: Annotated[Session, Depends(get_session)],
-                      ):
-    user = session.get(User, todo.user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+
+
+
+# class TokenData(BaseModel):
+#        name : str
+
+# *************   CREATE TODO   *************
+class TodoCreate(BaseModel):
+    title: str = Field(index=True, min_length=5, max_length=100)
+
+@app.post("/create_todo",  response_model=Todo)
+async def create_new_todo(todo: TodoCreate, session: Annotated[Session, Depends(get_session)],
+                      current_user: Annotated[User, Depends(current_user)]):
+    # user = session.get(User, todo.user_id)
+    # if not user:
+    #     raise HTTPException(status_code=404, detail="User not found")
     
-    session.add(todo)
+    new_todo = Todo(title=todo.title, user_id=current_user.id)
+    session.add(new_todo)
     session.commit()
-    session.refresh(todo)
-    print("Todo adding", todo)
+    session.refresh(new_todo)
+    print("Todo adding", new_todo)
 
-    return todo
+    return new_todo
 
+# ************     ***********    LOGIN USER    ***********     ***********     **********
 
 @app.post("/token", response_model=Token)
 async def login_user(form_data:Annotated[OAuth2PasswordRequestForm, Depends()],
@@ -194,3 +201,87 @@ async def login_user(form_data:Annotated[OAuth2PasswordRequestForm, Depends()],
         data={"sub": user.username}, expiry_time=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+    #************     ***********     GET ALL TODOS OF CURRENT USER ***********     ***********     **********
+    
+
+@app.get('/todos/', response_model=list[Todo])
+def get_all(current_user:Annotated[User, Depends(current_user)],
+                  session: Annotated[Session, Depends(get_session)]):
+    
+    
+    todos = session.exec(select(Todo).where(Todo.user_id == current_user.id)).all()
+
+    if todos:
+        return todos
+    else:
+        raise HTTPException(status_code=404, detail="No Task found")
+
+    #   ************     ***********     GET SINGLE TO DO OF CURRENT USER ***********     ***********     **********
+@app.get("/todos/{id}", response_model=Todo)
+async def get_single_task(id: int, 
+                          session: Annotated[Session, Depends(get_session)],
+                          current_user:Annotated[User, Depends(current_user)]):
+    user_todos = session.exec(select(Todo).where(Todo.user_id == current_user.id)).all()
+    matched_todo = next((todo for todo in user_todos if todo.id == id), None)
+
+    if matched_todo:
+        return matched_todo
+    else:
+        raise HTTPException(status_code=404, detail="Todo not found")
+    
+
+    #   ************     ***********     UPDATE SINGLE TO DO OF CURRENT USER ***********     ***********     **********
+
+@app.patch("/todos/{id}", response_model=Todo)
+async def update_todo(id: int, 
+                      todo: TodoUpdate,
+                      session: Annotated[Session, Depends(get_session)],
+                      current_user:Annotated[User, Depends(current_user)]):
+    user_todos = session.exec(select(Todo).where(Todo.user_id == current_user.id)).all()
+    update_todo = next((todo for todo in user_todos if todo.id == id), None)
+    if update_todo:
+        update_todo.title = todo.title
+        session.add(update_todo)
+        session.commit()
+        session.refresh(update_todo)
+        return update_todo
+    else:
+        raise HTTPException(status_code=404, detail="Todo not found")
+    
+
+    #   ************     ***********     PUT SINGLE TO DO OF CURRENT USER ***********     ***********     **********        
+    
+
+@app.put("/todos/{id}", response_model=Todo)
+async def update_todo(id: int, 
+                      todo: TodoUpdate,
+                      session: Annotated[Session, Depends(get_session)],
+                      current_user:Annotated[User, Depends(current_user)]):
+    user_todos = session.exec(select(Todo).where(Todo.user_id == current_user.id)).all()
+    update_todo = next((todo for todo in user_todos if todo.id == id), None)
+    if update_todo:
+        update_todo.title = todo.title
+        session.add(update_todo)
+        session.commit()
+        session.refresh(update_todo)
+        return update_todo
+    else:
+        raise HTTPException(status_code=404, detail="Todo not found")
+    
+
+    #   ************     ***********     DELETE SINGLE TO DO OF CURRENT USER ***********     ***********     **********
+
+@app.delete("/todos/{id}", response_model=Todo)
+async def delete_todo(id: int, 
+                      session: Annotated[Session, Depends(get_session)],
+                      current_user:Annotated[User, Depends(current_user)]):
+    user_todos = session.exec(select(Todo).where(Todo.user_id == current_user.id)).all()
+    delete_todo = next((todo for todo in user_todos if todo.id == id), None)
+    if delete_todo:
+        session.delete(delete_todo)
+        session.commit()
+        return delete_todo
+    else:
+        raise HTTPException(status_code=404, detail="Todo not found")
